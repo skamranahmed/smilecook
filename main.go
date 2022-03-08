@@ -48,6 +48,28 @@ func ListRecipesHandler(c *gin.Context) {
 	return
 }
 
+func GetRecipeHandler(c *gin.Context) {
+	id := c.Param("id")
+
+	var recipe Recipe
+	
+	index := -1
+	for i := 0; i < len(recipes); i++ {
+		if recipes[i].ID == id {
+			recipe = recipes[i]
+			index = i
+		}
+	}
+
+	if index == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Recipe not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, recipe)
+	return
+}
+
 func UpdateRecipeHandler(c *gin.Context) {
 	id := c.Param("id")
 
@@ -97,7 +119,7 @@ func SearchRecipesHandler(c *gin.Context) {
 	tag := c.Query("tag")
 
 	listOfRecipes := make([]Recipe, 0)
-	
+
 	for i := 0; i < len(recipes); i++ {
 		found := false
 		for _, t := range recipes[i].Tags {
@@ -119,6 +141,7 @@ func main() {
 	router := gin.Default()
 	router.POST("/recipes", NewRecipeHandler)
 	router.GET("/recipes", ListRecipesHandler)
+	router.GET("/recipes/:id", GetRecipeHandler)
 	router.PUT("/recipes/:id", UpdateRecipeHandler)
 	router.DELETE("/recipes/:id", DeleteRecipeHandler)
 	router.GET("/recipes/search", SearchRecipesHandler)
