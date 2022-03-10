@@ -1,22 +1,43 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var recipes []Recipe
+var (
+	recipes     []Recipe
+	ctx         context.Context
+	err         error
+	mongoClient *mongo.Client
+)
 
 func init() {
-	recipes = make([]Recipe, 0) // make allocates a zeroed array and returns a slice that refers to that array
+	// populate the recipes slice with dummy data from json file
+	recipes = make([]Recipe, 0)
 	file, _ := ioutil.ReadFile("dummyData/recipes.json")
 	_ = json.Unmarshal([]byte(file), &recipes)
+
+	// mongodb client setup
+	ctx = context.Background()
+	mongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	err = mongoClient.Ping(context.TODO(), readpref.Primary())
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("✅ Connected to MongoDB")
 }
 
 type Recipe struct {
@@ -52,7 +73,7 @@ func GetRecipeHandler(c *gin.Context) {
 	id := c.Param("id")
 
 	var recipe Recipe
-	
+
 	index := -1
 	for i := 0; i < len(recipes); i++ {
 		if recipes[i].ID == id {
