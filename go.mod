@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/gin-gonic/gin v1.7.7
 	go.mongodb.org/mongo-driver v1.8.4
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 )
 
 require (
