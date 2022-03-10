@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -25,10 +23,10 @@ var (
 )
 
 func init() {
-	// populate the recipes slice with dummy data from json file
-	recipes = make([]Recipe, 0)
-	file, _ := ioutil.ReadFile("dummyData/recipes.json")
-	_ = json.Unmarshal([]byte(file), &recipes)
+	// // populate the recipes slice with dummy data from json file
+	// recipes = make([]Recipe, 0)
+	// file, _ := ioutil.ReadFile("dummyData/recipes.json")
+	// _ = json.Unmarshal([]byte(file), &recipes)
 
 	// mongodb client setup
 	ctx = context.Background()
@@ -38,6 +36,20 @@ func init() {
 		log.Fatal(err)
 	}
 	log.Println("✅ Connected to MongoDB")
+
+	// // seed dummy data in mongodb
+	// var listOfRecipes []interface{}
+	// for _, recipe := range recipes {
+	// 	listOfRecipes = append(listOfRecipes, recipe)
+	// }
+
+	// collection := mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	// insertManyResult, err := collection.InsertMany(ctx, listOfRecipes)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// log.Println("Inserted recipes: ", len(insertManyResult.InsertedIDs))
 }
 
 type Recipe struct {
