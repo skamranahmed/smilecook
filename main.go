@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	redis "github.com/go-redis/redis/v8"
 	"github.com/skamranahmed/smilecook/handlers"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,8 +36,17 @@ func init() {
 
 	collection = mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       0,
+	})
+
+	status := redisClient.Ping(ctx)
+	log.Println("✅ Connected to Redis, PING:", status)
+
 	// instantiate the recipes handler
-	recipesHandler = handlers.NewRecipesHandler(ctx, collection)
+	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
 }
 
 type Recipe struct {
