@@ -113,6 +113,7 @@ func main() {
 	router := gin.Default()
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
 	router.POST("/signin", authHandler.SignInHandler)
+	router.POST("/refresh", authHandler.RefreshHandler)
 	// router.GET("/recipes/search", SearchRecipesHandler)
 
 	authorized := router.Group("/")
