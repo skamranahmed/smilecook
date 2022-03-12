@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	redis "github.com/go-redis/redis/v8"
 	"github.com/skamranahmed/smilecook/handlers"
@@ -22,6 +24,7 @@ var (
 	mongoClient    *mongo.Client
 	collection     *mongo.Collection
 	recipesHandler *handlers.RecipesHandler
+	authHandler    *handlers.AuthHandler
 )
 
 func init() {
@@ -45,8 +48,9 @@ func init() {
 	status := redisClient.Ping(ctx)
 	log.Println("✅ Connected to Redis, PING:", status)
 
-	// instantiate the recipes handler
+	// instantiate the handler(s)
 	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
+	authHandler = &handlers.AuthHandler{}
 }
 
 type Recipe struct {
@@ -80,13 +84,45 @@ type Recipe struct {
 // 	return
 // }
 
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// if c.GetHeader("X-API-KEY") != os.Getenv("X_API_KEY") {
+		// 	c.AbortWithStatus(401)
+		// }
+
+		tokenValue := c.GetHeader("Authorization")
+
+		claims := &handlers.Claims{}
+		token, err := jwt.ParseWithClaims(tokenValue, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte(os.Getenv("JWT_SECRET")), nil
+		})
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		if token == nil || !token.Valid {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		c.Next()
+	}
+}
+
 func main() {
 	router := gin.Default()
-	router.POST("/recipes", recipesHandler.NewRecipeHandler)
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
-	router.PUT("/recipes/:id", recipesHandler.UpdateRecipeHandler)
-	router.DELETE("/recipes/:id", recipesHandler.DeleteRecipeHandler)
-	router.GET("/recipes/:id", recipesHandler.GetOneRecipeHandler)
+	router.POST("/signin", authHandler.SignInHandler)
 	// router.GET("/recipes/search", SearchRecipesHandler)
+
+	authorized := router.Group("/")
+	authorized.Use(AuthMiddleware())
+	{
+		authorized.POST("/recipes", recipesHandler.NewRecipeHandler)
+		authorized.GET("/recipes/:id", recipesHandler.GetOneRecipeHandler)
+		authorized.PUT("/recipes/:id", recipesHandler.UpdateRecipeHandler)
+		authorized.DELETE("/recipes/:id", recipesHandler.DeleteRecipeHandler)
+	}
+
 	router.Run()
 }
