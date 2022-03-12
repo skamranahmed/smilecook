@@ -8,9 +8,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/skamranahmed/smilecook/models"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/net/context"
 )
-
-type AuthHandler struct{}
 
 type Claims struct {
 	Username string `json:"username"`
@@ -21,6 +22,51 @@ type JWTOutput struct {
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expires_at"`
 }
+type AuthHandler struct {
+	collection *mongo.Collection
+	ctx        context.Context
+}
+
+func NewAuthHandler(ctx context.Context, collection *mongo.Collection) *AuthHandler {
+	return &AuthHandler{
+		collection: collection,
+		ctx:        ctx,
+	}
+}
+
+func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
+	var user models.User
+	err := c.ShouldBindJSON(&user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// TODO: compare the hash of the password instead of plaintext comparision because in db the hashed password would be saved
+	cur := handler.collection.FindOne(handler.ctx, bson.M{
+		"username": user.Username,
+		"password": user.Password,
+	})
+
+	if cur.Err() != mongo.ErrNoDocuments {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username already exists"})
+		return
+	}
+
+	// TOOD: hash the password before saving in db
+	_, err = handler.collection.InsertOne(handler.ctx, bson.M{
+		"username": user.Username,
+		"password": user.Password,
+	})
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "signup successfull"})
+	return
+}
 
 func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 	var user models.User
@@ -29,7 +75,12 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 		return
 	}
 
-	if user.Username != "admin" || user.Password != "password" {
+	// TODO: compare with the hashed password
+	cur := handler.collection.FindOne(handler.ctx,
+		bson.M{"username": user.Username, "password": user.Password},
+	)
+
+	if cur.Err() != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
@@ -81,7 +132,7 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 
 	expirationTime := time.Now().Add(5 * time.Minute)
 	claims.ExpiresAt = expirationTime.Unix()
-	
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(os.Getenv("JWT_SECRET"))
 	if err != nil {

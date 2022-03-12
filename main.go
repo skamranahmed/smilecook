@@ -18,13 +18,14 @@ import (
 )
 
 var (
-	recipes        []Recipe
-	ctx            context.Context
-	err            error
-	mongoClient    *mongo.Client
-	collection     *mongo.Collection
-	recipesHandler *handlers.RecipesHandler
-	authHandler    *handlers.AuthHandler
+	recipes         []Recipe
+	ctx             context.Context
+	err             error
+	mongoClient     *mongo.Client
+	collection      *mongo.Collection
+	collectionUsers *mongo.Collection
+	recipesHandler  *handlers.RecipesHandler
+	authHandler     *handlers.AuthHandler
 )
 
 func init() {
@@ -38,6 +39,7 @@ func init() {
 	log.Println("✅ Connected to MongoDB")
 
 	collection = mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	collectionUsers = mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
@@ -50,7 +52,7 @@ func init() {
 
 	// instantiate the handler(s)
 	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
-	authHandler = &handlers.AuthHandler{}
+	authHandler = handlers.NewAuthHandler(ctx, collectionUsers)
 }
 
 type Recipe struct {
@@ -112,6 +114,7 @@ func AuthMiddleware() gin.HandlerFunc {
 func main() {
 	router := gin.Default()
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
+	router.POST("/signup", authHandler.SignUpHandler)
 	router.POST("/signin", authHandler.SignInHandler)
 	router.POST("/refresh", authHandler.RefreshHandler)
 	// router.GET("/recipes/search", SearchRecipesHandler)
