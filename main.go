@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	redis "github.com/go-redis/redis/v8"
 	"github.com/skamranahmed/smilecook/handlers"
@@ -113,6 +114,10 @@ func AuthMiddleware() gin.HandlerFunc {
 
 func main() {
 	router := gin.Default()
+
+	// CORS middleware
+	router.Use(cors.Default())
+
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
 	router.POST("/signup", authHandler.SignUpHandler)
 	router.POST("/signin", authHandler.SignInHandler)
