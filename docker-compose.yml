@@ -14,6 +14,7 @@ services:
       - redis
     depends_on:
       - redis
+    scale: 5
   
   redis:
     image: redis
