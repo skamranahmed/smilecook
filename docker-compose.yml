@@ -12,6 +12,8 @@ services:
     external_links:
       - mongodb
       - redis
+    depends_on:
+      - redis
   
   redis:
     image: redis

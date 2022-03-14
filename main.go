@@ -43,7 +43,7 @@ func init() {
 	collectionUsers = mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     os.Getenv("REDIS_URI"),
 		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       0,
 	})
