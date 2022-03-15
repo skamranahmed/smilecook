@@ -48,8 +48,13 @@ func init() {
 		DB:       0,
 	})
 
-	status := redisClient.Ping(ctx)
-	log.Println("✅ Connected to Redis, PING:", status)
+	redisConnectionStatus := redisClient.Ping(ctx)
+	redisConnectionErr := redisConnectionStatus.Err()
+	if redisConnectionErr != nil {
+		log.Fatalf("❌ unable to connect to redis, error: %v", redisConnectionErr)
+	}
+
+	log.Println("✅ Connected to Redis - ", redisConnectionStatus)
 
 	// instantiate the handler(s)
 	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
