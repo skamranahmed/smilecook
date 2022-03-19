@@ -1,0 +1,37 @@
+version: 2.1 # use CircleCI 2.1
+
+executors:
+  # run the workflows inside a golang docker image, this is done so as to make migrations easy and prevent vendor-lock-in
+  # if we ever wish to change the CI provider in the future
+  environment:
+    docker:
+      - image: golang:1.17
+    working_directory: /go/src/github.com/skamranahmed/smilecook
+
+jobs:
+  test:
+    executor: environment
+    steps:
+      - checkout # this instruction fetches the latest changes
+
+      - restore_cache: # restores saved cache if no changes are detected since last run
+          keys:
+            - go-mod-v4-{{ checksum "go.sum" }}
+
+      - run:
+          name: Install Dependencies
+          command: go mod download
+
+      - save_cache:
+          key: go-mod-v4-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+
+      - run:
+          name: Unit tests
+          command: go test -v ./...
+
+workflows:
+  ci_cd:
+    jobs:
+      - test
