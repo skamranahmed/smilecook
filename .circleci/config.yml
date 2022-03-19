@@ -77,10 +77,10 @@ workflows:
   ci_cd:
     jobs:
       - test
-      - build
+      - build:
           requires:
             - test
-      - deploy
+      - deploy:
           requires:
             - test
             - build
