@@ -6,6 +6,9 @@ executors:
   environment:
     docker:
       - image: golang:1.17
+      - run:
+          name: Install Docker client
+          command: sudo apk add docker-cli
     working_directory: /go/src/github.com/skamranahmed/smilecook-api
 
 jobs:
@@ -38,6 +41,7 @@ jobs:
 
       - setup_remote_docker:
           version: 20.10.11
+          docker_layer_caching: true
 
       - run:
           name: Build Image
@@ -52,7 +56,6 @@ jobs:
             docker tag skamranahmed/smilecook-api:$TAG 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:staging
             docker push 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:$TAG
             docker push 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:staging
-      
 
 workflows:
   ci_cd:
