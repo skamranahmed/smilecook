@@ -6,9 +6,7 @@ executors:
   environment:
     docker:
       - image: golang:1.17
-      - run:
-          name: Install Docker client
-          command: sudo apk add docker-cli
+        command: sudo apk add docker-cli
     working_directory: /go/src/github.com/skamranahmed/smilecook-api
 
 jobs:
