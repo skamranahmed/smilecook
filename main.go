@@ -92,6 +92,11 @@ type Recipe struct {
 // 	return
 // }
 
+func VersionHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"version": os.Getenv("API_VERSION")})
+	return
+}
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// if c.GetHeader("X-API-KEY") != os.Getenv("X_API_KEY") {
@@ -123,6 +128,7 @@ func main() {
 	// CORS middleware
 	router.Use(cors.Default())
 
+	router.GET("/version", VersionHandler)
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
 	router.POST("/signup", authHandler.SignUpHandler)
 	router.POST("/signin", authHandler.SignInHandler)
