@@ -59,9 +59,12 @@ jobs:
             TAG=0.1.$CIRCLE_BUILD_NUM
             aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_USER_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
             docker tag skamranahmed/smilecook-api:$TAG 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:$TAG
-            docker tag skamranahmed/smilecook-api:$TAG 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:staging
             docker push 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:$TAG
-            docker push 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:staging
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ "${CIRCLE_BRANCH}" == "sandbox" ] || [ "${CIRCLE_BRANCH}" == "staging" ];
+            then
+              docker tag skamranahmed/smilecook-api:$TAG $AWS_USER_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/smilecook:$CIRCLE_BRANCH
+              docker push $AWS_USER_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/smilecook:$CIRCLE_BRANCH
+            fi
     
   deploy:
     executor: environment
@@ -71,7 +74,14 @@ jobs:
       - run:
           name: Deploy with Docker Compose
           command: |
-            ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_EC2_INSTANCE_IP "cd smilecook && ls"
+            if [ "${CIRCLE_BRANCH}" == "sandbox" ]
+            then
+              ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_SANDBOX_EC2_INSTANCE_IP "cd smilecook && ls"
+            elif [ "${CIRCLE_BRANCH}" == "staging" ]
+            then
+              ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_STAGING_EC2_INSTANCE_IP "cd smilecook && ls"
+            fi
+
 
 workflows:
   ci_cd:
