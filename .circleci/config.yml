@@ -71,7 +71,7 @@ jobs:
       - run:
           name: Deploy with Docker Compose
           command: |
-            ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_EC2_INSTANCE_IP "cd smilecook && sudo su && docker-compose pull && docker-compose up"
+            ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_EC2_INSTANCE_IP "cd smilecook && ls"
 
 workflows:
   ci_cd:
