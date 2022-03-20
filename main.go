@@ -47,6 +47,14 @@ var totalHTTPMethods = prometheus.NewCounterVec(
 	[]string{"method"},
 )
 
+var httpDuration = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Name: "http_response_time_seconds",
+		Help: "Duration of HTTP requests",
+	},
+	[]string{"path"},
+)
+
 func init() {
 	// mongodb client setup
 	ctx = context.Background()
@@ -81,6 +89,7 @@ func init() {
 	// register promethues metrics
 	prometheus.Register(totalRequests)
 	prometheus.Register(totalHTTPMethods)
+	prometheus.Register(httpDuration)
 }
 
 type Recipe struct {
@@ -121,9 +130,12 @@ func VersionHandler(c *gin.Context) {
 
 func PrometheusMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		timer := prometheus.NewTimer(httpDuration.WithLabelValues(c.Request.URL.Path))
 		totalRequests.WithLabelValues(c.Request.URL.Path).Inc()
 		totalHTTPMethods.WithLabelValues(c.Request.Method).Inc()
 		c.Next()
+		// this needs to be placed after c.Next() as we need to observe the time once the request has been served
+		timer.ObserveDuration()
 	}
 }
 
