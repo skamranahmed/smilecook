@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -8,7 +9,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/skamranahmed/smilecook/models"
+	"github.com/skamranahmed/smilecook/service"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/net/context"
 )
@@ -23,20 +26,27 @@ type JWTOutput struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 type AuthHandler struct {
-	collection *mongo.Collection
-	ctx        context.Context
+	ctx         context.Context
+	collection  *mongo.Collection
+	userService service.UserService
 }
 
-func NewAuthHandler(ctx context.Context, collection *mongo.Collection) *AuthHandler {
+type userSignUpRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func NewAuthHandler(ctx context.Context, collection *mongo.Collection, userService service.UserService) *AuthHandler {
 	return &AuthHandler{
-		collection: collection,
-		ctx:        ctx,
+		ctx:         ctx,
+		collection:  collection,
+		userService: userService,
 	}
 }
 
 func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
-	var user models.User
-	err := c.ShouldBindJSON(&user)
+	var request userSignUpRequest
+	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -44,8 +54,8 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 
 	// TODO: compare the hash of the password instead of plaintext comparision because in db the hashed password would be saved
 	cur := handler.collection.FindOne(handler.ctx, bson.M{
-		"username": user.Username,
-		"password": user.Password,
+		"username": request.Username,
+		"password": request.Password,
 	})
 
 	if cur.Err() != mongo.ErrNoDocuments {
@@ -54,12 +64,18 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 	}
 
 	// TOOD: hash the password before saving in db
-	_, err = handler.collection.InsertOne(handler.ctx, bson.M{
-		"username": user.Username,
-		"password": user.Password,
-	})
+	user := &models.User{
+		ID:        primitive.NewObjectID(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Username:  request.Username,
+		Password:  request.Password,
+		IsAdmin:   false, // always false in this handler
+	}
 
+	err = handler.userService.Create(user)
 	if err != nil {
+		fmt.Printf("Unable to insert user: %+v in db, err: %v\n", user, err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/skamranahmed/smilecook/handlers"
+	"github.com/skamranahmed/smilecook/repository"
+	"github.com/skamranahmed/smilecook/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -82,14 +84,20 @@ func init() {
 
 	log.Println("✅ Connected to Redis - ", redisConnectionStatus)
 
-	// instantiate the handler(s)
-	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
-	authHandler = handlers.NewAuthHandler(ctx, collectionUsers)
-
 	// register promethues metrics
 	prometheus.Register(totalRequests)
 	prometheus.Register(totalHTTPMethods)
 	prometheus.Register(httpDuration)
+
+	// instantiate the repo(s)
+	userRepository := repository.NewUserRepository(ctx, collectionUsers)
+
+	// instantiate the service(s)
+	userService := service.NewUserService(userRepository)
+
+	// instantiate the handler(s)
+	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
+	authHandler = handlers.NewAuthHandler(ctx, collectionUsers, userService)
 }
 
 type Recipe struct {
@@ -100,28 +108,6 @@ type Recipe struct {
 	Ingredients  []string           `json:"ingredients" bson:"ingredients"`
 	Instructions []string           `json:"instructions" bson:"instructions"`
 }
-
-// func SearchRecipesHandler(c *gin.Context) {
-// 	tag := c.Query("tag")
-
-// 	listOfRecipes := make([]Recipe, 0)
-
-// 	for i := 0; i < len(recipes); i++ {
-// 		found := false
-// 		for _, t := range recipes[i].Tags {
-// 			if strings.EqualFold(t, tag) {
-// 				found = true
-// 			}
-// 		}
-
-// 		if found {
-// 			listOfRecipes = append(listOfRecipes, recipes[i])
-// 		}
-// 	}
-
-// 	c.JSON(http.StatusOK, listOfRecipes)
-// 	return
-// }
 
 func VersionHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": os.Getenv("API_VERSION")})
@@ -141,10 +127,6 @@ func PrometheusMiddleware() gin.HandlerFunc {
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// if c.GetHeader("X-API-KEY") != os.Getenv("X_API_KEY") {
-		// 	c.AbortWithStatus(401)
-		// }
-
 		tokenValue := c.GetHeader("Authorization")
 
 		claims := &handlers.Claims{}
@@ -179,7 +161,6 @@ func main() {
 	router.POST("/signup", authHandler.SignUpHandler)
 	router.POST("/signin", authHandler.SignInHandler)
 	router.POST("/refresh", authHandler.RefreshHandler)
-	// router.GET("/recipes/search", SearchRecipesHandler)
 
 	authorized := router.Group("/")
 	authorized.Use(AuthMiddleware())
