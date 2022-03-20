@@ -2,8 +2,8 @@ version: "3.9"
 
 services:
   smilecook-api:
-    #image: smilecook-api # for local
-    image: 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:staging
+    image: smilecook-api # for local
+    # image: 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:staging
     environment: # local credentials
       - MONGO_URI=mongodb://admin:password@mongodb:27017/test?authSource=admin&readPreference=primary&ssl=false
       - MONGO_DATABASE=demo
@@ -29,6 +29,15 @@ services:
     environment: # local credentials
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password
+
+  prometheus:
+    image: prom/prometheus:v2.27.0
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 4040:9090
+    networks:
+      - smilecook_network
 
   nginx:
     image: nginx
