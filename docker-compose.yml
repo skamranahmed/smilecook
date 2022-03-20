@@ -39,6 +39,13 @@ services:
     networks:
       - smilecook_network
 
+  grafana:
+    image: grafana/grafana:7.5.6
+    ports:
+      - 3030:3000
+    networks:
+      - smilecook_network
+
   nginx:
     image: nginx
     ports:
