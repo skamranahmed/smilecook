@@ -11,6 +11,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	redis "github.com/go-redis/redis/v8"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/skamranahmed/smilecook/handlers"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,6 +29,22 @@ var (
 	collectionUsers *mongo.Collection
 	recipesHandler  *handlers.RecipesHandler
 	authHandler     *handlers.AuthHandler
+)
+
+var totalRequests = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Number of incoming requests",
+	},
+	[]string{"path"},
+)
+
+var totalHTTPMethods = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "http_methods_total",
+		Help: "Number of requests per HTTP method",
+	},
+	[]string{"method"},
 )
 
 func init() {
@@ -59,6 +77,10 @@ func init() {
 	// instantiate the handler(s)
 	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
 	authHandler = handlers.NewAuthHandler(ctx, collectionUsers)
+
+	// register promethues metrics
+	prometheus.Register(totalRequests)
+	prometheus.Register(totalHTTPMethods)
 }
 
 type Recipe struct {
@@ -97,6 +119,14 @@ func VersionHandler(c *gin.Context) {
 	return
 }
 
+func PrometheusMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		totalRequests.WithLabelValues(c.Request.URL.Path).Inc()
+		totalHTTPMethods.WithLabelValues(c.Request.Method).Inc()
+		c.Next()
+	}
+}
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// if c.GetHeader("X-API-KEY") != os.Getenv("X_API_KEY") {
@@ -128,7 +158,11 @@ func main() {
 	// CORS middleware
 	router.Use(cors.Default())
 
+	// Prometheus middleware
+	router.Use(PrometheusMiddleware())
+
 	router.GET("/version", VersionHandler)
+	router.GET("/prometheus", gin.WrapH(promhttp.Handler()))
 	router.GET("/recipes", recipesHandler.ListRecipesHandler)
 	router.POST("/signup", authHandler.SignUpHandler)
 	router.POST("/signin", authHandler.SignInHandler)
