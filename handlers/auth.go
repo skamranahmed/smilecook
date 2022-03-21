@@ -52,13 +52,24 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 		return
 	}
 
-	// TODO: compare the hash of the password instead of plaintext comparision because in db the hashed password would be saved
-	cur := handler.collection.FindOne(handler.ctx, bson.M{
-		"username": request.Username,
-		"password": request.Password,
-	})
+	// // TODO: compare the hash of the password instead of plaintext comparision because in db the hashed password would be saved
+	// cur := handler.collection.FindOne(handler.ctx, bson.M{
+	// 	"username": request.Username,
+	// 	"password": request.Password,
+	// })
 
-	if cur.Err() != mongo.ErrNoDocuments {
+	// if cur.Err() != mongo.ErrNoDocuments {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "username already exists"})
+	// 	return
+	// }
+
+	usernameAlreadyExists, err := handler.userService.DoesUsernameAlreadyExist(request.Username)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if usernameAlreadyExists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "username already exists"})
 		return
 	}

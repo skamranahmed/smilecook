@@ -19,3 +19,7 @@ type userService struct {
 func (us *userService) Create(u *models.User) error {
 	return us.userRepo.Create(u)
 }
+
+func (us *userService) DoesUsernameAlreadyExist(username string) (bool, error) {
+	return us.userRepo.DoesUsernameAlreadyExist(username)
+}
