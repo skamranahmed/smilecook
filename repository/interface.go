@@ -11,4 +11,5 @@ type UserRepository interface {
 
 type RecipeRepository interface {
 	Create(recipe *models.Recipe) error
+	FetchAll() ([]*models.Recipe, error)
 }

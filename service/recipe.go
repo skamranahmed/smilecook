@@ -18,3 +18,7 @@ type recipeService struct {
 func (rs *recipeService) Create(r *models.Recipe) error {
 	return rs.recipeRepo.Create(r)
 }
+
+func (rs *recipeService) FetchAll() ([]*models.Recipe, error) {
+	return rs.recipeRepo.FetchAll()
+}

@@ -61,21 +61,18 @@ func (handler *RecipesHandler) CreateRecipeHandler(c *gin.Context) {
 // ListRecipesHandler: fetches a list of recipes
 func (handler *RecipesHandler) ListRecipesHandler(c *gin.Context) {
 	val, err := handler.redisClient.Get(handler.ctx, "recipes").Result()
-	if err == redis.Nil {
-		log.Println("value not found in redis....hitting mongo db")
-
-		cur, err := handler.collection.Find(handler.ctx, bson.M{})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+	if err != nil {
+		if err == redis.Nil {
+			log.Println("value not found in redis, hitting mongo db now")
+		} else {
+			log.Printf("error in retrieving value from redis, err: %v, hitting mongo db now\n", err)
 		}
-		defer cur.Close(handler.ctx)
 
-		recipes := make([]models.Recipe, 0)
-		for cur.Next(handler.ctx) {
-			var recipe models.Recipe
-			cur.Decode(&recipe)
-			recipes = append(recipes, recipe)
+		// fetch all recipes from mongo db
+		recipes, err := handler.recipeService.FetchAll()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
 		// save the data in redis
@@ -84,16 +81,13 @@ func (handler *RecipesHandler) ListRecipesHandler(c *gin.Context) {
 
 		c.JSON(http.StatusOK, recipes)
 		return
-	} else if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	} else {
-		log.Println("request to redis")
-		recipes := make([]models.Recipe, 0)
-		json.Unmarshal([]byte(val), &recipes)
-		c.JSON(http.StatusOK, recipes)
-		return
 	}
+
+	log.Println("request to redis")
+	recipes := make([]*models.Recipe, 0)
+	json.Unmarshal([]byte(val), &recipes)
+	c.JSON(http.StatusOK, recipes)
+	return
 }
 
 func (handler *RecipesHandler) UpdateRecipeHandler(c *gin.Context) {

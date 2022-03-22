@@ -11,6 +11,8 @@ type UserService interface {
 	VerifyPassword(plainTextPassword, hashedPassword string) error
 }
 
+// RecipeService defines the methods that can be performed on the recipe object in the service layer
 type RecipeService interface {
 	Create(recipe *models.Recipe) error
+	FetchAll() ([]*models.Recipe, error)
 }
