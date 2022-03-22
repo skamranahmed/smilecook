@@ -13,6 +13,7 @@ import (
 	redis "github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/skamranahmed/smilecook/config"
 	"github.com/skamranahmed/smilecook/handlers"
 	"github.com/skamranahmed/smilecook/repository"
 	"github.com/skamranahmed/smilecook/service"
@@ -56,19 +57,19 @@ var httpDuration = prometheus.NewHistogramVec(
 func init() {
 	// mongodb client setup
 	ctx = context.Background()
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoURI))
 	err = mongoClient.Ping(context.TODO(), readpref.Primary())
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("✅ Connected to MongoDB")
 
-	recipesCollection := mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
-	usersCollection := mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
+	recipesCollection := mongoClient.Database(config.MongoDatabaseName).Collection("recipes")
+	usersCollection := mongoClient.Database(config.MongoDatabaseName).Collection("users")
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_URI"),
-		Password: os.Getenv("REDIS_PASSWORD"),
+		Addr:     config.RedisURI,
+		Password: config.RedisPassword,
 		DB:       0,
 	})
 
@@ -107,6 +108,7 @@ type Recipe struct {
 	Instructions []string           `json:"instructions" bson:"instructions"`
 }
 
+// this is just a test route - no logic here
 func VersionHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": os.Getenv("API_VERSION")})
 	return
@@ -129,7 +131,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		claims := &handlers.Claims{}
 		token, err := jwt.ParseWithClaims(tokenValue, claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(os.Getenv("JWT_SECRET")), nil
+			return []byte(config.JWTSecretKey), nil
 		})
 		if err != nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
