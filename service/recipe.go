@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/skamranahmed/smilecook/models"
 	"github.com/skamranahmed/smilecook/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func NewRecipeService(recipeRepo repository.RecipeRepository) RecipeService {
@@ -21,4 +22,8 @@ func (rs *recipeService) Create(r *models.Recipe) error {
 
 func (rs *recipeService) FetchAll() ([]*models.Recipe, error) {
 	return rs.recipeRepo.FetchAll()
+}
+
+func (rs *recipeService) Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error) {
+	return rs.recipeRepo.Update(documentObjectID, recipe)
 }

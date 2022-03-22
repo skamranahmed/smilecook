@@ -6,6 +6,7 @@ import (
 
 	"github.com/skamranahmed/smilecook/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -26,7 +27,6 @@ type recipeRepo struct {
 // Create: inserts a new recipe record in the `recipes` collection
 func (rr *recipeRepo) Create(r *models.Recipe) error {
 	if !rr.isCollectionNameCorrect() {
-		// TODO: setup custom errors
 		return errors.New("incorrect collection name")
 	}
 
@@ -35,6 +35,10 @@ func (rr *recipeRepo) Create(r *models.Recipe) error {
 }
 
 func (rr *recipeRepo) FetchAll() ([]*models.Recipe, error) {
+	if !rr.isCollectionNameCorrect() {
+		return nil, errors.New("incorrect collection name")
+	}
+
 	cur, err := rr.collection.Find(rr.ctx, bson.M{})
 	if err != nil {
 		return nil, err
@@ -49,6 +53,34 @@ func (rr *recipeRepo) FetchAll() ([]*models.Recipe, error) {
 	}
 
 	return recipes, nil
+}
+
+func (rr *recipeRepo) Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error) {
+	if !rr.isCollectionNameCorrect() {
+		return false, errors.New("incorrect collection name")
+	}
+
+	result, err := rr.collection.UpdateOne(rr.ctx,
+		bson.M{"_id": documentObjectID},
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "name", Value: recipe.Name},
+				{Key: "instructions", Value: recipe.Instructions},
+				{Key: "ingredients", Value: recipe.Ingredients},
+				{Key: "tags", Value: recipe.Tags},
+			},
+			},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	if result.MatchedCount == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (rr *recipeRepo) isCollectionNameCorrect() bool {

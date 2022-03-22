@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -106,17 +107,16 @@ func (handler *RecipesHandler) UpdateRecipeHandler(c *gin.Context) {
 		return
 	}
 
-	_, err = handler.collection.UpdateOne(handler.ctx,
-		bson.M{"_id": objectID},
-		bson.D{{Key: "$set", Value: bson.D{
-			{Key: "name", Value: recipe.Name},
-			{Key: "instructions", Value: recipe.Instructions},
-			{Key: "ingredients", Value: recipe.Ingredients},
-			{Key: "tags", Value: recipe.Tags},
-		}}})
-
+	recordExists, err := handler.recipeService.Update(objectID, &recipe)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err == nil && !recordExists {
+		// this means no recipe record was found for the requested id, but the operation succeeded without any error
+		errMsg := fmt.Sprintf("no recipe found with id: %s", id)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errMsg})
 		return
 	}
 

@@ -1,6 +1,9 @@
 package service
 
-import "github.com/skamranahmed/smilecook/models"
+import (
+	"github.com/skamranahmed/smilecook/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // UserService defines the methods that can be performed on the user object in the service layer
 type UserService interface {
@@ -15,4 +18,5 @@ type UserService interface {
 type RecipeService interface {
 	Create(recipe *models.Recipe) error
 	FetchAll() ([]*models.Recipe, error)
+	Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error)
 }
