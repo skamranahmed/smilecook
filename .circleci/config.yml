@@ -40,7 +40,7 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*When*:\n$(date +'%m/%d/%Y %T')"
+                      "text": "*When*:\n$(TZ='Asia/Kolkata' date +'%m/%d/%Y %T')"
                     },
                     {
                       "type": "mrkdwn",
@@ -89,9 +89,7 @@ jobs:
 
       - run:
           name: Unit tests
-          command: |
-            go test -v ./...
-            exit 1
+          command: go test -v ./...
 
       - slack/notify:
           channel: "#smilecook-ci-cd"
@@ -118,7 +116,7 @@ jobs:
                     },
                     {
                       "type": "mrkdwn",
-                      "text": "*When*:\n$(date +'%m/%d/%Y %T')"
+                      "text": "*When*:\n$(TZ='Asia/Kolkata' date +'%m/%d/%Y %T')"
                     },
                     {
                       "type": "mrkdwn",
