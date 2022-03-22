@@ -14,6 +14,7 @@ type UserRepository interface {
 
 type RecipeRepository interface {
 	Create(recipe *models.Recipe) error
+	FindOne(documentObjectID primitive.ObjectID) (*models.Recipe, error)
 	FetchAll() ([]*models.Recipe, error)
 	Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error)
 	Delete(documentObjectID primitive.ObjectID) (bool, error)

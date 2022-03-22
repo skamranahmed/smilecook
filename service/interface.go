@@ -17,6 +17,7 @@ type UserService interface {
 // RecipeService defines the methods that can be performed on the recipe object in the service layer
 type RecipeService interface {
 	Create(recipe *models.Recipe) error
+	FindOne(documentObjectID primitive.ObjectID) (*models.Recipe, error)
 	FetchAll() ([]*models.Recipe, error)
 	Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error)
 	Delete(documentObjectID primitive.ObjectID) (bool, error)

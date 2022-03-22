@@ -11,7 +11,6 @@ import (
 	redis "github.com/go-redis/redis/v8"
 	"github.com/skamranahmed/smilecook/models"
 	"github.com/skamranahmed/smilecook/service"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/net/context"
@@ -161,11 +160,15 @@ func (handler *RecipesHandler) GetOneRecipeHandler(c *gin.Context) {
 		return
 	}
 
-	cur := handler.collection.FindOne(handler.ctx, bson.M{"_id": objectID})
-
-	var recipe models.Recipe
-	err = cur.Decode(&recipe)
+	// find a recipe with the requested id
+	recipe, err := handler.recipeService.FindOne(objectID)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			// no recipe record found
+			errMsg := fmt.Sprintf("no recipe found with id: %s", id)
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": errMsg})
+			return
+		}
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

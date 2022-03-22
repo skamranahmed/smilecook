@@ -34,6 +34,22 @@ func (rr *recipeRepo) Create(r *models.Recipe) error {
 	return err
 }
 
+func (rr *recipeRepo) FindOne(documentObjectID primitive.ObjectID) (*models.Recipe, error) {
+	if !rr.isCollectionNameCorrect() {
+		return nil, errors.New("incorrect collection name")
+	}
+
+	cur := rr.collection.FindOne(rr.ctx, bson.M{"_id": documentObjectID})
+
+	var recipe models.Recipe
+	err := cur.Decode(&recipe)
+	if err != nil {
+		return nil, err
+	}
+
+	return &recipe, nil
+}
+
 func (rr *recipeRepo) FetchAll() ([]*models.Recipe, error) {
 	if !rr.isCollectionNameCorrect() {
 		return nil, errors.New("incorrect collection name")

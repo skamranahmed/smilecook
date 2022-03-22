@@ -20,6 +20,10 @@ func (rs *recipeService) Create(r *models.Recipe) error {
 	return rs.recipeRepo.Create(r)
 }
 
+func (rs *recipeService) FindOne(documentObjectID primitive.ObjectID) (*models.Recipe, error) {
+	return rs.recipeRepo.FindOne(documentObjectID)
+}
+
 func (rs *recipeService) FetchAll() ([]*models.Recipe, error) {
 	return rs.recipeRepo.FetchAll()
 }
