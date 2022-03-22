@@ -27,3 +27,7 @@ func (rs *recipeService) FetchAll() ([]*models.Recipe, error) {
 func (rs *recipeService) Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error) {
 	return rs.recipeRepo.Update(documentObjectID, recipe)
 }
+
+func (rs *recipeService) Delete(documentObjectID primitive.ObjectID) (bool, error) {
+	return rs.recipeRepo.Delete(documentObjectID)
+}

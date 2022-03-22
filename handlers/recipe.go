@@ -129,15 +129,22 @@ func (handler *RecipesHandler) UpdateRecipeHandler(c *gin.Context) {
 
 func (handler *RecipesHandler) DeleteRecipeHandler(c *gin.Context) {
 	id := c.Param("id")
-
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	_, err = handler.collection.DeleteOne(handler.ctx, bson.M{"_id": objectID})
+
+	recordExists, err := handler.recipeService.Delete(objectID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err == nil && !recordExists {
+		// this means no recipe record was found for the requested id, but the operation succeeded without any error
+		errMsg := fmt.Sprintf("no recipe found with id: %s", id)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": errMsg})
 		return
 	}
 

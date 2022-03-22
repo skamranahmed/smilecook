@@ -83,6 +83,23 @@ func (rr *recipeRepo) Update(documentObjectID primitive.ObjectID, recipe *models
 	return true, nil
 }
 
+func (rr *recipeRepo) Delete(documentObjectID primitive.ObjectID) (bool, error) {
+	if !rr.isCollectionNameCorrect() {
+		return false, errors.New("incorrect collection name")
+	}
+
+	result, err := rr.collection.DeleteOne(rr.ctx, bson.M{"_id": documentObjectID})
+	if err != nil {
+		return false, err
+	}
+
+	if result.DeletedCount == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (rr *recipeRepo) isCollectionNameCorrect() bool {
 	return rr.collection.Name() == recipeCollectionName
 }

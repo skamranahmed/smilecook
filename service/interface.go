@@ -19,4 +19,5 @@ type RecipeService interface {
 	Create(recipe *models.Recipe) error
 	FetchAll() ([]*models.Recipe, error)
 	Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error)
+	Delete(documentObjectID primitive.ObjectID) (bool, error)
 }
