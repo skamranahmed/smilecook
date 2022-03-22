@@ -6,4 +6,6 @@ import "github.com/skamranahmed/smilecook/models"
 type UserService interface {
 	Create(user *models.User) error
 	DoesUsernameAlreadyExist(username string) (bool, error)
+	HashPassword(plainTextPassword string) (string, error)
+	VerifyPassword(plainTextPassword, hashedPassword string) error
 }

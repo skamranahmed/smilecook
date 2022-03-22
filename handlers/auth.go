@@ -36,6 +36,11 @@ type userSignUpRequest struct {
 	Password string `json:"password"`
 }
 
+type userSignInRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func NewAuthHandler(ctx context.Context, collection *mongo.Collection, userService service.UserService) *AuthHandler {
 	return &AuthHandler{
 		ctx:         ctx,
@@ -52,17 +57,6 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 		return
 	}
 
-	// // TODO: compare the hash of the password instead of plaintext comparision because in db the hashed password would be saved
-	// cur := handler.collection.FindOne(handler.ctx, bson.M{
-	// 	"username": request.Username,
-	// 	"password": request.Password,
-	// })
-
-	// if cur.Err() != mongo.ErrNoDocuments {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "username already exists"})
-	// 	return
-	// }
-
 	usernameAlreadyExists, err := handler.userService.DoesUsernameAlreadyExist(request.Username)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -74,13 +68,19 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 		return
 	}
 
-	// TOOD: hash the password before saving in db
+	// hash the password before saving in db
+	hashedPassword, err := handler.userService.HashPassword(request.Password)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	user := &models.User{
 		ID:        primitive.NewObjectID(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Username:  request.Username,
-		Password:  request.Password,
+		Password:  hashedPassword,
 		IsAdmin:   false, // always false in this handler
 	}
 
@@ -96,19 +96,30 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 }
 
 func (handler *AuthHandler) SignInHandler(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var request userSignInRequest
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// TODO: compare with the hashed password
-	cur := handler.collection.FindOne(handler.ctx,
-		bson.M{"username": user.Username, "password": user.Password},
-	)
-
+	cur := handler.collection.FindOne(handler.ctx, bson.M{"username": request.Username})
 	if cur.Err() != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	var user models.User
+	err = cur.Decode(&user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// verify the password
+	err = handler.userService.VerifyPassword(request.Password, user.Password)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
