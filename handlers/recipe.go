@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	redis "github.com/go-redis/redis/v8"
 	"github.com/skamranahmed/smilecook/models"
+	"github.com/skamranahmed/smilecook/service"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,22 +17,24 @@ import (
 )
 
 type RecipesHandler struct {
-	ctx         context.Context
-	collection  *mongo.Collection
-	redisClient *redis.Client
+	ctx           context.Context
+	collection    *mongo.Collection
+	redisClient   *redis.Client
+	recipeService service.RecipeService
 }
 
 // NewRecipesHandler: used to create a new instance from the RecipesHanlder struct
-func NewRecipesHandler(ctx context.Context, collection *mongo.Collection, redisClient *redis.Client) *RecipesHandler {
+func NewRecipesHandler(ctx context.Context, collection *mongo.Collection, redisClient *redis.Client, recipeService service.RecipeService) *RecipesHandler {
 	return &RecipesHandler{
-		ctx:         ctx,
-		collection:  collection,
-		redisClient: redisClient,
+		ctx:           ctx,
+		collection:    collection,
+		redisClient:   redisClient,
+		recipeService: recipeService,
 	}
 }
 
-// NewRecipeHandler: inserts a new recipe
-func (handler *RecipesHandler) NewRecipeHandler(c *gin.Context) {
+// CreateRecipeHandler: inserts a new recipe
+func (handler *RecipesHandler) CreateRecipeHandler(c *gin.Context) {
 	var recipe models.Recipe
 	err := c.ShouldBindJSON(&recipe)
 	if err != nil {
@@ -42,7 +45,7 @@ func (handler *RecipesHandler) NewRecipeHandler(c *gin.Context) {
 	recipe.ID = primitive.NewObjectID()
 	recipe.PublishedAt = time.Now()
 
-	_, err = handler.collection.InsertOne(handler.ctx, recipe)
+	err = handler.recipeService.Create(&recipe)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error while inserting a new recipe"})
 		return

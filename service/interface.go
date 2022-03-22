@@ -10,3 +10,7 @@ type UserService interface {
 	HashPassword(plainTextPassword string) (string, error)
 	VerifyPassword(plainTextPassword, hashedPassword string) error
 }
+
+type RecipeService interface {
+	Create(recipe *models.Recipe) error
+}

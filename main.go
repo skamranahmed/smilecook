@@ -23,14 +23,10 @@ import (
 )
 
 var (
-	recipes         []Recipe
-	ctx             context.Context
-	err             error
-	mongoClient     *mongo.Client
-	collection      *mongo.Collection
-	collectionUsers *mongo.Collection
-	recipesHandler  *handlers.RecipesHandler
-	authHandler     *handlers.AuthHandler
+	ctx            context.Context
+	err            error
+	recipesHandler *handlers.RecipesHandler
+	authHandler    *handlers.AuthHandler
 )
 
 var totalRequests = prometheus.NewCounterVec(
@@ -60,15 +56,15 @@ var httpDuration = prometheus.NewHistogramVec(
 func init() {
 	// mongodb client setup
 	ctx = context.Background()
-	mongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	err = mongoClient.Ping(context.TODO(), readpref.Primary())
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("✅ Connected to MongoDB")
 
-	collection = mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
-	collectionUsers = mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
+	recipesCollection := mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	usersCollection := mongoClient.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("REDIS_URI"),
@@ -90,14 +86,16 @@ func init() {
 	prometheus.Register(httpDuration)
 
 	// instantiate the repo(s)
-	userRepository := repository.NewUserRepository(ctx, collectionUsers)
+	userRepository := repository.NewUserRepository(ctx, usersCollection)
+	recipeRepository := repository.NewRecipeRepository(ctx, recipesCollection)
 
 	// instantiate the service(s)
 	userService := service.NewUserService(userRepository)
+	recipeService := service.NewRecipeService(recipeRepository)
 
 	// instantiate the handler(s)
-	recipesHandler = handlers.NewRecipesHandler(ctx, collection, redisClient)
-	authHandler = handlers.NewAuthHandler(ctx, collectionUsers, userService)
+	recipesHandler = handlers.NewRecipesHandler(ctx, recipesCollection, redisClient, recipeService)
+	authHandler = handlers.NewAuthHandler(ctx, usersCollection, userService)
 }
 
 type Recipe struct {
@@ -165,7 +163,7 @@ func main() {
 	authorized := router.Group("/")
 	authorized.Use(AuthMiddleware())
 	{
-		authorized.POST("/recipes", recipesHandler.NewRecipeHandler)
+		authorized.POST("/recipes", recipesHandler.CreateRecipeHandler)
 		authorized.GET("/recipes/:id", recipesHandler.GetOneRecipeHandler)
 		authorized.PUT("/recipes/:id", recipesHandler.UpdateRecipeHandler)
 		authorized.DELETE("/recipes/:id", recipesHandler.DeleteRecipeHandler)

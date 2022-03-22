@@ -8,3 +8,7 @@ type UserRepository interface {
 	FindOne(username string) (*models.User, error)
 	DoesUsernameAlreadyExist(username string) (bool, error)
 }
+
+type RecipeRepository interface {
+	Create(recipe *models.Recipe) error
+}

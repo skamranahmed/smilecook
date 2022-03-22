@@ -26,12 +26,6 @@ type userRepo struct {
 
 // Create: inserts a new user record in the `users` collection
 func (ur *userRepo) Create(u *models.User) error {
-	// collectionName := ur.collection.Name()
-	// if collectionName != userCollectionName {
-	// 	// TODO: setup custom errors
-	// 	return errors.New("incorrect collection name")
-	// }
-
 	if !ur.isCollectionNameCorrect() {
 		// TODO: setup custom errors
 		return errors.New("incorrect collection name")
@@ -48,9 +42,6 @@ func (ur *userRepo) FindOne(username string) (*models.User, error) {
 
 	cur := ur.collection.FindOne(ur.ctx, bson.M{"username": username})
 	if cur.Err() != nil {
-		// if cur.Err() == mongo.ErrNoDocuments {
-		// 	return nil, errors.New("invalid username or password")
-		// }
 		return nil, cur.Err()
 	}
 
