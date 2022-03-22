@@ -16,7 +16,7 @@ jobs:
     steps:
       - slack/notify:
           channel: "#smilecook-ci-cd"
-          event: always
+          event: always # trigger this event always
           # custom notification builder docs : https://app.slack.com/block-kit-builder
           custom: |
             {
@@ -89,7 +89,67 @@ jobs:
 
       - run:
           name: Unit tests
-          command: go test -v ./...
+          command: |
+            go test -v ./...
+            exit 1
+
+      - slack/notify:
+          channel: "#smilecook-ci-cd"
+          event: fail # trigger this event only when the preceeding step fails
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Tests failed, run for your life*! :fearful:"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(date +'%m/%d/%Y %T')"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*:\n$CIRCLE_BRANCH"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*:\n$CIRCLE_USERNAME"
+                    }
+                  ],
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://media.tenor.com/images/645150dcfc0770e2b73ef458872d6e7a/tenor.gif",
+                    "alt_text": "CircleCI logo"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Job"
+                      },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
 
   build:
     executor: environment
