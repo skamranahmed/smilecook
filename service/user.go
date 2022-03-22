@@ -23,6 +23,10 @@ func (us *userService) Create(u *models.User) error {
 	return us.userRepo.Create(u)
 }
 
+func (us *userService) FindOne(username string) (*models.User, error) {
+	return us.userRepo.FindOne(username)
+}
+
 func (us *userService) DoesUsernameAlreadyExist(username string) (bool, error) {
 	return us.userRepo.DoesUsernameAlreadyExist(username)
 }
@@ -30,7 +34,7 @@ func (us *userService) DoesUsernameAlreadyExist(username string) (bool, error) {
 func (us *userService) HashPassword(plainTextPassword string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainTextPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return "", fmt.Errorf("falied to hash password, error:%s", err)
+		return "", fmt.Errorf("falied to hash password, error: %s", err)
 	}
 	return string(hashedPassword), nil
 }

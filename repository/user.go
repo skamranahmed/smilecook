@@ -41,6 +41,28 @@ func (ur *userRepo) Create(u *models.User) error {
 	return err
 }
 
+func (ur *userRepo) FindOne(username string) (*models.User, error) {
+	if !ur.isCollectionNameCorrect() {
+		return nil, errors.New("incorrect collection name")
+	}
+
+	cur := ur.collection.FindOne(ur.ctx, bson.M{"username": username})
+	if cur.Err() != nil {
+		// if cur.Err() == mongo.ErrNoDocuments {
+		// 	return nil, errors.New("invalid username or password")
+		// }
+		return nil, cur.Err()
+	}
+
+	var user models.User
+	err := cur.Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 // FindOne: checks whether a user with the provided credentials exists or not
 func (ur *userRepo) DoesUsernameAlreadyExist(username string) (bool, error) {
 	if !ur.isCollectionNameCorrect() {

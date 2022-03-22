@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/skamranahmed/smilecook/models"
 	"github.com/skamranahmed/smilecook/service"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/net/context"
@@ -103,15 +102,14 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 		return
 	}
 
-	cur := handler.collection.FindOne(handler.ctx, bson.M{"username": request.Username})
-	if cur.Err() != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
-		return
-	}
-
-	var user models.User
-	err = cur.Decode(&user)
+	// find a user with the requested username
+	user, err := handler.userService.FindOne(request.Username)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			// no user record found
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid username or password"})
+			return
+		}
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
