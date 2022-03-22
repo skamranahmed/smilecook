@@ -8,6 +8,12 @@ services:
       - MONGO_URI=mongodb://admin:password@mongodb:27017/test?authSource=admin&readPreference=primary&ssl=false
       - MONGO_DATABASE=demo
       - REDIS_URI=redis:6379
+      - API_VERSION=1.0.0
+    logging:
+      driver: gelf # gelf will be used to stream our application logs to logstash
+      options:
+        gelf-address: "udp://127.0.0.1:12201" # TODO: research on why is this UDP?
+        tag: "smilecook-api"
     networks:
       - smilecook_network
     external_links:
@@ -54,6 +60,36 @@ services:
     networks:
       - smilecook_network
 
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.12.1
+    command: logstash -f /etc/logstash/logstash.conf
+    volumes:
+      - $PWD/logstash.conf:/etc/logstash/logstash.conf
+    ports:
+      - "5000:5000"
+      - "12201:12201"
+      - "12201:12201/udp"
+    networks:
+      - smilecook_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node # for production env we should use multiple nodes but for now single node is fine
+    networks:
+      - smilecook_network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.12.1
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - smilecook_network
+
   nginx:
     image: nginx
     ports:
@@ -67,4 +103,4 @@ services:
 
 networks:
   smilecook_network:
-    external: true
+    external: true # the network should be created externally before running docker-compose up, TODO: change this behaviour to create the network upon running docker-compose up
