@@ -10,6 +10,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
 FROM alpine:latest
 
+ARG API_VERSION
+
+ENV API_VERSION=$API_VERSION
+
 RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/

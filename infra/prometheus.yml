@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['prometheus:9090'] # use the same port exposed for prometheus image in docker-compose file
+
+  - job_name: smilecook-api
+    metrics_path: /prometheus
+    static_configs:
+      - targets:
+        - smilecook-api:8080 # use the service name of the api defined in docker-compose file
+
+  - job_name: telegraf
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['telegraf:9100']

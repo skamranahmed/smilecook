@@ -26,3 +26,6 @@ certs/
 
 ### OSX ###
 .DS_Store
+
+### Local Config ###
+/config/localConfig.yaml

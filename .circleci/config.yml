@@ -1,0 +1,220 @@
+version: 2.1 # use CircleCI 2.1
+
+orbs:
+  slack: circleci/slack@4.1.1
+executors:
+  # run the workflows inside a golang docker image, this is done so as to make migrations easy and prevent vendor-lock-in
+  # if we ever wish to change the CI provider in the future
+  environment:
+    docker:
+      - image: circleci/golang:1.15
+    working_directory: /go/src/github.com/skamranahmed/smilecook-api
+
+jobs:
+  test:
+    executor: environment
+    steps:
+      - slack/notify:
+          channel: "#smilecook-ci-cd"
+          event: always # trigger this event always
+          # custom notification builder docs : https://app.slack.com/block-kit-builder
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Build has started*! :crossed_fingers:"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(TZ='Asia/Kolkata' date +'%m/%d/%Y %T')"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*:\n$CIRCLE_BRANCH"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*:\n$CIRCLE_USERNAME"
+                    }
+                  ],
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://media.giphy.com/media/3orieTfp1MeFLiBQR2/giphy.gif",
+                    "alt_text": "CircleCI logo"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "https://circleci.com/workflow-run/${CIRCLE_WORKFLOW_ID}"
+                    }
+                  ]
+                }
+              ]
+            }
+      - checkout # this instruction fetches the latest changes
+
+      - restore_cache: # restores saved cache if no changes are detected since last run
+          keys:
+            - go-mod-v4-{{ checksum "go.sum" }}
+
+      - run:
+          name: Install Dependencies
+          command: go mod download
+
+      - save_cache:
+          key: go-mod-v4-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+
+      - run:
+          name: Unit tests
+          command: go test -v ./...
+
+      - slack/notify:
+          channel: "#smilecook-ci-cd"
+          event: fail # trigger this event only when the preceeding step fails
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Tests failed, run for your life*! :fearful:"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(TZ='Asia/Kolkata' date +'%m/%d/%Y %T')"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*:\n$CIRCLE_BRANCH"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*:\n$CIRCLE_USERNAME"
+                    }
+                  ],
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://media.tenor.com/images/645150dcfc0770e2b73ef458872d6e7a/tenor.gif",
+                    "alt_text": "CircleCI logo"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Job"
+                      },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+  build:
+    executor: environment
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          version: 20.10.11
+          docker_layer_caching: true
+
+      - run:
+          name: Build Image
+          command: |
+            TAG=0.1.$CIRCLE_BUILD_NUM
+            docker build -t skamranahmed/smilecook-api:$TAG --build-arg API_VERSION=${TAG} .
+
+      - run:
+          name: Install AWS CLI
+          command: |
+            sudo  apt-get update
+            sudo apt-get install -y python3-pip
+            pip3 install awscli
+
+      - run:
+          name: Push Image
+          command: |
+            TAG=0.1.$CIRCLE_BUILD_NUM
+            aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_USER_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+            docker tag skamranahmed/smilecook-api:$TAG 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:$TAG
+            docker push 034317561586.dkr.ecr.ap-south-1.amazonaws.com/smilecook:$TAG
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ "${CIRCLE_BRANCH}" == "sandbox" ] || [ "${CIRCLE_BRANCH}" == "staging" ];
+            then
+              docker tag skamranahmed/smilecook-api:$TAG $AWS_USER_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/smilecook:$CIRCLE_BRANCH
+              docker push $AWS_USER_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/smilecook:$CIRCLE_BRANCH
+            fi
+    
+  deploy:
+    executor: environment
+    steps:
+      - checkout
+
+      - run:
+          name: Deploy with Docker Compose
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "sandbox" ]
+            then
+              ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_SANDBOX_EC2_INSTANCE_IP "cd smilecook && ls"
+            elif [ "${CIRCLE_BRANCH}" == "staging" ]
+            then
+              ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_STAGING_EC2_INSTANCE_IP "cd smilecook && ls"
+            fi
+
+
+workflows:
+  ci_cd:
+    jobs:
+      - test
+      - build:
+          requires:
+            - test
+      - deploy:
+          requires:
+            - test
+            - build
+          filters:
+            branches:
+              only:
+                - master
+                - sandbox
+                - staging
