@@ -52,14 +52,6 @@ services:
     networks:
       - smilecook_network
 
-  telegraf:
-    image: telegraf:latest
-    volumes:
-      - $PWD/infra/telegraf.conf:/etc/telegraf/telegraf.conf
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - smilecook_network
-
   logstash:
     image: docker.elastic.co/logstash/logstash:7.12.1
     command: logstash -f /etc/logstash/logstash.conf
