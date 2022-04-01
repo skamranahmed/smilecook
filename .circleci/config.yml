@@ -1,5 +1,7 @@
 version: 2.1 # use CircleCI 2.1
 
+orbs:
+  slack: circleci/slack@4.1.1
 executors:
   # run the workflows inside a golang docker image, this is done so as to make migrations easy and prevent vendor-lock-in
   # if we ever wish to change the CI provider in the future
@@ -12,6 +14,64 @@ jobs:
   test:
     executor: environment
     steps:
+      - slack/notify:
+          channel: "#smilecook-ci-cd"
+          event: always # trigger this event always
+          # custom notification builder docs : https://app.slack.com/block-kit-builder
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Build has started*! :crossed_fingers:"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(TZ='Asia/Kolkata' date +'%m/%d/%Y %T')"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*:\n$CIRCLE_BRANCH"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*:\n$CIRCLE_USERNAME"
+                    }
+                  ],
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://media.giphy.com/media/3orieTfp1MeFLiBQR2/giphy.gif",
+                    "alt_text": "CircleCI logo"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "https://circleci.com/workflow-run/${CIRCLE_WORKFLOW_ID}"
+                    }
+                  ]
+                }
+              ]
+            }
       - checkout # this instruction fetches the latest changes
 
       - restore_cache: # restores saved cache if no changes are detected since last run
@@ -30,6 +90,64 @@ jobs:
       - run:
           name: Unit tests
           command: go test -v ./...
+
+      - slack/notify:
+          channel: "#smilecook-ci-cd"
+          event: fail # trigger this event only when the preceeding step fails
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Tests failed, run for your life*! :fearful:"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(TZ='Asia/Kolkata' date +'%m/%d/%Y %T')"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*:\n$CIRCLE_BRANCH"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*:\n$CIRCLE_USERNAME"
+                    }
+                  ],
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://media.tenor.com/images/645150dcfc0770e2b73ef458872d6e7a/tenor.gif",
+                    "alt_text": "CircleCI logo"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Job"
+                      },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
 
   build:
     executor: environment
