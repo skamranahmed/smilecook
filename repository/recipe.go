@@ -12,6 +12,7 @@ import (
 
 const recipeCollectionName string = "recipes"
 
+// NewRecipeRepository : returns a recipeRepo struct that implements the RecipeRepository interface
 func NewRecipeRepository(ctx context.Context, recipeCollection *mongo.Collection) RecipeRepository {
 	return &recipeRepo{
 		ctx:        ctx,
@@ -34,6 +35,7 @@ func (rr *recipeRepo) Create(r *models.Recipe) error {
 	return err
 }
 
+// FindOne : finds a recipe record with the provided id
 func (rr *recipeRepo) FindOne(documentObjectID primitive.ObjectID) (*models.Recipe, error) {
 	if !rr.isCollectionNameCorrect() {
 		return nil, errors.New("incorrect collection name")
@@ -50,6 +52,7 @@ func (rr *recipeRepo) FindOne(documentObjectID primitive.ObjectID) (*models.Reci
 	return &recipe, nil
 }
 
+// FetchAll : fetches all recipe records
 func (rr *recipeRepo) FetchAll() ([]*models.Recipe, error) {
 	if !rr.isCollectionNameCorrect() {
 		return nil, errors.New("incorrect collection name")
@@ -71,6 +74,7 @@ func (rr *recipeRepo) FetchAll() ([]*models.Recipe, error) {
 	return recipes, nil
 }
 
+// Update : updates a recipe record with the provided ID
 func (rr *recipeRepo) Update(documentObjectID primitive.ObjectID, recipe *models.Recipe) (bool, error) {
 	if !rr.isCollectionNameCorrect() {
 		return false, errors.New("incorrect collection name")
@@ -99,6 +103,7 @@ func (rr *recipeRepo) Update(documentObjectID primitive.ObjectID, recipe *models
 	return true, nil
 }
 
+// Delete : deletes a recipe record with the provided ID
 func (rr *recipeRepo) Delete(documentObjectID primitive.ObjectID) (bool, error) {
 	if !rr.isCollectionNameCorrect() {
 		return false, errors.New("incorrect collection name")
@@ -116,6 +121,7 @@ func (rr *recipeRepo) Delete(documentObjectID primitive.ObjectID) (bool, error) 
 	return true, nil
 }
 
+// isCollectionNameCorrect : verifies the collection name for the recipe queries
 func (rr *recipeRepo) isCollectionNameCorrect() bool {
 	return rr.collection.Name() == recipeCollectionName
 }

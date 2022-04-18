@@ -17,6 +17,7 @@ import (
 
 type Claims struct {
 	Username string `json:"username"`
+	IsAdmin  bool   `json:"is_admin"`
 	jwt.StandardClaims
 }
 
@@ -48,6 +49,7 @@ func NewAuthHandler(ctx context.Context, collection *mongo.Collection, userServi
 	}
 }
 
+// SignUpHandler: sign up a user
 func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 	var request userSignUpRequest
 	err := c.ShouldBindJSON(&request)
@@ -94,6 +96,7 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 	return
 }
 
+// SignInHandler: sign in a user
 func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 	var request userSignInRequest
 	err := c.ShouldBindJSON(&request)
@@ -124,6 +127,7 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 	expirationTime := time.Now().Add(10 * time.Minute)
 	claims := &Claims{
 		Username: user.Username,
+		IsAdmin:  user.IsAdmin,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
@@ -144,7 +148,9 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 	return
 }
 
+// RefreshHandler: refreshes the token
 func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
+	// TODO: add a middleware to extract the auth header and process the validation logic
 	tokenValue := c.GetHeader("Authorization")
 	claims := &Claims{}
 	tkn, err := jwt.ParseWithClaims(tokenValue, claims, func(token *jwt.Token) (interface{}, error) {
@@ -183,5 +189,4 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, jwtOutput)
 	return
-
 }

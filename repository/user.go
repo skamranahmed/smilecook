@@ -35,6 +35,7 @@ func (ur *userRepo) Create(u *models.User) error {
 	return err
 }
 
+// FindOne : finds a user record with the provided username
 func (ur *userRepo) FindOne(username string) (*models.User, error) {
 	if !ur.isCollectionNameCorrect() {
 		return nil, errors.New("incorrect collection name")
@@ -54,7 +55,7 @@ func (ur *userRepo) FindOne(username string) (*models.User, error) {
 	return &user, nil
 }
 
-// FindOne: checks whether a user with the provided credentials exists or not
+// DoesUsernameAlreadyExist: checks whether a user with the provided username exists or not
 func (ur *userRepo) DoesUsernameAlreadyExist(username string) (bool, error) {
 	if !ur.isCollectionNameCorrect() {
 		return false, errors.New("incorrect collection name")
@@ -72,6 +73,7 @@ func (ur *userRepo) DoesUsernameAlreadyExist(username string) (bool, error) {
 	return false, nil
 }
 
+// isCollectionNameCorrect : verifies the collection name for the user queries
 func (ur *userRepo) isCollectionNameCorrect() bool {
 	return ur.collection.Name() == userCollectionName
 }

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
@@ -17,7 +16,6 @@ import (
 	"github.com/skamranahmed/smilecook/handlers"
 	"github.com/skamranahmed/smilecook/repository"
 	"github.com/skamranahmed/smilecook/service"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -97,15 +95,6 @@ func init() {
 	// instantiate the handler(s)
 	recipesHandler = handlers.NewRecipesHandler(ctx, recipesCollection, redisClient, recipeService)
 	authHandler = handlers.NewAuthHandler(ctx, usersCollection, userService)
-}
-
-type Recipe struct {
-	ID           primitive.ObjectID `json:"id" bson:"_id"`
-	Name         string             `json:"name" bson:"name"`
-	PublishedAt  time.Time          `json:"publishedAt" bson:"publishedAt"`
-	Tags         []string           `json:"tags" bson:"tags"`
-	Ingredients  []string           `json:"ingredients" bson:"ingredients"`
-	Instructions []string           `json:"instructions" bson:"instructions"`
 }
 
 // this is just a test route - no logic here
