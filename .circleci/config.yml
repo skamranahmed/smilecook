@@ -93,7 +93,7 @@ jobs:
 
       - slack/notify:
           channel: "#smilecook-ci-cd"
-          event: fail # trigger this event only when the preceeding step fails
+          event: pass # trigger this event only when the preceeding step fails
           custom: |
             {
               "blocks": [
