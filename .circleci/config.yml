@@ -53,8 +53,8 @@ jobs:
                   ],
                   "accessory": {
                     "type": "image",
-                    "image_url": "https://media.giphy.com/media/3orieTfp1MeFLiBQR2/giphy.gif",
-                    "alt_text": "CircleCI logo"
+                    "image_url": "https://media.giphy.com/media/JpmaPqFO6Pf2hMNacE/giphy.gif",
+                    "alt_text": "The Office Nervous Gif"
                   }
                 },
                 {
@@ -129,8 +129,8 @@ jobs:
                   ],
                   "accessory": {
                     "type": "image",
-                    "image_url": "https://media.tenor.com/images/645150dcfc0770e2b73ef458872d6e7a/tenor.gif",
-                    "alt_text": "CircleCI logo"
+                    "image_url": "https://media.giphy.com/media/d10dMmzqCYqQ0/giphy.gif",
+                    "alt_text": "The Office No-God-Please-No Gif"
                   }
                 },
                 {
@@ -199,6 +199,64 @@ jobs:
             then
               ssh -oStrictHostKeyChecking=no ec2-user@$SMILECOOK_STAGING_EC2_INSTANCE_IP "cd smilecook && ls"
             fi
+            
+      - slack/notify:
+          channel: "#smilecook-ci-cd"
+          event: pass
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Deployed*! :grin:"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n$CIRCLE_PROJECT_REPONAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(TZ='Asia/Kolkata' date +'%m/%d/%Y %T')"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*:\n$CIRCLE_BRANCH"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*:\n$CIRCLE_USERNAME"
+                    }
+                  ],
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://media.giphy.com/media/cXblnKXr2BQOaYnTni/giphy.gif",
+                    "alt_text": "The Office Happy Gif"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "https://circleci.com/workflow-run/${CIRCLE_WORKFLOW_ID}"
+                    }
+                  ]
+                }
+              ]
+            }
 
 
 workflows:
