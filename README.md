@@ -1,5 +1,5 @@
-## SmileCook
-Recipe Sharing Platform
+## SmileCook API
+🍕 Recipe Sharing Platform
 
 ### Tech Stack
 
@@ -18,9 +18,18 @@ Recipe Sharing Platform
 ### App Architecture
 ![app-architecture](https://user-images.githubusercontent.com/43776315/161248668-03a0e736-aeaa-4603-9f39-82f28b21ba92.png)
 
-
 ### CI/CD Workflow
 ![ci-cd-workflow](https://user-images.githubusercontent.com/43776315/161249276-ebd7c8b2-2135-41e1-aff0-821e3a3e8d62.png)
+
+#### Slack Notfications
+- Build Started 🤞
+![build-started](https://user-images.githubusercontent.com/43776315/163988335-11028657-25e2-44aa-a295-8824bcbd9a57.gif)
+
+- Deployed 😁
+![deployed](https://user-images.githubusercontent.com/43776315/163988580-c892a27a-e08b-46d9-8bd5-20a0a93beb34.gif)
+
+- Tests Failed 😨
+![tests-failed](https://user-images.githubusercontent.com/43776315/163988479-c6c7a5a4-09d3-4b35-92ca-0ad71daabb56.gif)
 
 
 ### Monitoring Metrics
