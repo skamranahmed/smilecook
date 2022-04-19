@@ -52,13 +52,13 @@ func (rr *recipeRepo) FindOne(documentObjectID primitive.ObjectID) (*models.Reci
 	return &recipe, nil
 }
 
-// FetchAll : fetches all recipe records
+// FetchAll : fetches all public recipe records
 func (rr *recipeRepo) FetchAll() ([]*models.Recipe, error) {
 	if !rr.isCollectionNameCorrect() {
 		return nil, errors.New("incorrect collection name")
 	}
 
-	cur, err := rr.collection.Find(rr.ctx, bson.M{})
+	cur, err := rr.collection.Find(rr.ctx, bson.M{"isPrivate": false})
 	if err != nil {
 		return nil, err
 	}

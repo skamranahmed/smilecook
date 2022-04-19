@@ -132,6 +132,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		c.Set("auth", claims)
 		c.Next()
 	}
 }

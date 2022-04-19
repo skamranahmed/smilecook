@@ -27,7 +27,7 @@ func (rs *recipeService) FindOne(documentObjectID primitive.ObjectID) (*models.R
 	return rs.recipeRepo.FindOne(documentObjectID)
 }
 
-// FetchAll : fetched all the recipe records
+// FetchAll : fetches all public recipe records
 func (rs *recipeService) FetchAll() ([]*models.Recipe, error) {
 	return rs.recipeRepo.FetchAll()
 }
