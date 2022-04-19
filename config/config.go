@@ -16,13 +16,19 @@ func (e AppEnvironment) IsLocal() bool {
 
 // slice of all app environments except the `local`` env
 var (
+	// MongoDB
 	MongoURI          string
 	MongoDatabaseName string
 
+	// Redis
 	RedisURI      string
 	RedisPassword string
 
+	// Token
 	JWTSecretKey string
+
+	// Server
+	ServerPort string
 
 	AppEnvironemnts = []AppEnvironment{
 		AppEnvironmentStaging,
@@ -65,13 +71,19 @@ func SetConfigFromViper() {
 	}
 
 	// fetch the env vars and store in variables
+	// MongoDB
 	MongoURI = os.Getenv("MONGO_URI")
 	MongoDatabaseName = os.Getenv("MONGO_DATABASE_NAME")
 
+	// Redis
 	RedisURI = os.Getenv("REDIS_URI")
 	RedisPassword = os.Getenv("REDIS_PASSWORD")
 
+	// Token
 	JWTSecretKey = os.Getenv("JWT_SECRET_KEY")
+
+	// Server
+	ServerPort = os.Getenv("SERVER_PORT")
 }
 
 func getCurrentHostEnvironment() AppEnvironment {
@@ -104,20 +116,18 @@ func setEnvironmentVarsFromConfig() {
 	}
 
 	// get the env vars from viper
-	mongoURI := viper.GetString("mongoURI")
-	mongoDatabaseName := viper.GetString("mongoDatabaseName")
-
-	redisURI := viper.GetString("redisURI")
-	redisPassword := viper.GetString("redisPassword")
-
-	jwtSecretKey := viper.GetString("jwtSecretKey")
+	mongoURI := viper.GetString("MONGO_URI")
+	mongoDatabaseName := viper.GetString("MONGO_DB_NAME")
+	redisURI := viper.GetString("REDIS_URI")
+	redisPassword := viper.GetString("REDIS_PASSWORD")
+	jwtSecretKey := viper.GetString("JWT_SECRET_KEY")
+	serverPort := viper.GetString("SERVER_PORT")
 
 	// set the host OS env vars
 	os.Setenv("MONGO_URI", mongoURI)
 	os.Setenv("MONGO_DATABASE_NAME", mongoDatabaseName)
-
 	os.Setenv("REDIS_URI", redisURI)
 	os.Setenv("REDIS_PASSWORD", redisPassword)
-
 	os.Setenv("JWT_SECRET_KEY", jwtSecretKey)
+	os.Setenv("SERVER_PORT", serverPort)
 }

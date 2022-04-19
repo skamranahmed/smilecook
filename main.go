@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -160,5 +161,6 @@ func main() {
 		authorized.DELETE("/recipes/:id", recipesHandler.DeleteRecipeHandler)
 	}
 
-	router.Run()
+	addr := fmt.Sprintf(":%s", config.ServerPort)
+	router.Run(addr)
 }
